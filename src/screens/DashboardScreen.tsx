@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View, Button } from 'react-native';
+import { StyleSheet, Text, View, Button, ScrollView, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { useDailyLog } from '../hooks/useDailyLog';
-import { upsertDailyLog } from '../services/storage';
+import { upsertDailyLog, wipeDailyLogs } from '../services/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
@@ -21,8 +21,26 @@ export default function DashboardScreen({ navigation }: Props) {
     await refresh();
   };
 
+  const onWipe = () => {
+    Alert.alert(
+      'Wipe DB?',
+      'This deletes all local rows. Cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Wipe',
+          style: 'destructive',
+          onPress: async () => {
+            await wipeDailyLogs();
+            await refresh();
+          },
+        },
+      ]
+    );
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Lumen</Text>
       <Text style={styles.subtitle}>{date}</Text>
 
@@ -41,6 +59,30 @@ export default function DashboardScreen({ navigation }: Props) {
         <View style={styles.dataBlock}>
           <Text style={styles.body}>Sleep: {log.sleepDurationMin ?? '—'} min</Text>
           <Text style={styles.body}>Screen time: {log.screenTimeTotalMin ?? '—'} min</Text>
+
+          {log.screenTimeApps && log.screenTimeApps.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Apps</Text>
+              {log.screenTimeApps.map((app) => (
+                <Text key={app.name} style={styles.rowSmall}>
+                  {app.name}: {app.minutes} min
+                </Text>
+              ))}
+            </View>
+          )}
+
+           {/* {log.screenTimeHourly && log.screenTimeHourly.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Hourly</Text>
+              {log.screenTimeHourly.map((h) => (
+                <Text key={h.hour} style={styles.rowSmall}>
+                  {String(h.hour).padStart(2, '0')}:00 — {h.minutes} min
+                  {h.dominantCategory ? ` (${h.dominantCategory})` : ''}
+                </Text>
+              ))}
+            </View>
+          )} */}
+
         </View>
       ) : (
         <Text style={styles.body}>No data for {date}</Text>
@@ -48,10 +90,12 @@ export default function DashboardScreen({ navigation }: Props) {
 
       <View style={styles.buttons}>
         <Button title="Seed test data" onPress={onSeed} />
+        <Button title="Total Screen Time" onPress={() => navigation.navigate('Totals')} />
         <Button title="History" onPress={() => navigation.navigate('History')} />
         <Button title="Capture Screen Time" onPress={() => navigation.navigate('Capture')} />
+        <Button title="Wipe DB" color="#c00" onPress={onWipe} />
       </View>
-    </View>
+    </ScrollView>
   );
 
 }
@@ -63,5 +107,8 @@ const styles = StyleSheet.create({
   body: { fontSize: 16, marginBottom: 8 },
   dataBlock: { marginBottom: 24, alignItems: 'center' },
   dayNav: { flexDirection: 'row', gap: 24, marginBottom: 16 },
+  section: { marginTop: 16, alignItems: 'flex-start', alignSelf: 'stretch' },
+  sectionTitle: { fontSize: 14, fontWeight: '600', marginBottom: 4, color: '#444' },
+  rowSmall: { fontSize: 13, color: '#555' },
   buttons: { gap: 12, width: '100%' },
 });

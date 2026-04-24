@@ -161,6 +161,42 @@ export async function getDailyLog(date: string): Promise<DailyLog | null> {
   return row ? rowToDailyLog(row) : null;
 }
 
+export async function wipeDailyLogs(): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM daily_log');
+}
+
+export async function getAppTotals(): Promise<{
+  earliestDate: string | null;
+  totals: AppUsage[];
+}> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{ date: string; screen_time_apps: string | null }>(
+    'SELECT date, screen_time_apps FROM daily_log WHERE screen_time_apps IS NOT NULL ORDER BY date ASC'
+  );
+
+  if (rows.length === 0) {
+    return { earliestDate: null, totals: [] };
+  }
+
+  const earliestDate = rows[0].date;
+  const sums = new Map<string, number>();
+
+  for (const row of rows) {
+    if (!row.screen_time_apps) continue;
+    const apps = JSON.parse(row.screen_time_apps) as AppUsage[];
+    for (const app of apps) {
+      sums.set(app.name, (sums.get(app.name) ?? 0) + app.minutes);
+    }
+  }
+
+  const totals = Array.from(sums.entries())
+    .map(([name, minutes]) => ({ name, minutes }))
+    .sort((a, b) => b.minutes - a.minutes);
+
+  return { earliestDate, totals };
+}
+
 export async function getRecentDailyLogs(limit: number): Promise<DailyLog[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<DailyLogRow>(

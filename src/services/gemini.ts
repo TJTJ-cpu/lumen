@@ -1,6 +1,7 @@
 import { GEMINI_API_KEY } from "../constants/config";
 import type { GeminiScreenTimeResponse } from "../types";
 
+// const MODEL = 'gemini-2.5-flash';
 const MODEL = 'gemini-2.5-flash-lite';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 

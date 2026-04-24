@@ -13,7 +13,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../types';
 import { parseScreenTime } from '../services/gemini';
-import { upsertDailyLog } from '../services/storage';
+import { saveDailyLog } from '../services/sync';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Capture'>;
 
@@ -56,7 +56,7 @@ export default function CaptureScreen({ navigation }: Props) {
 
       const date = parsed.date ?? new Date().toISOString().slice(0, 10);
 
-      await upsertDailyLog({
+      await saveDailyLog({
         date,
         screenTimeTotalMin: parsed.total_minutes,
         screenTimeApps: parsed.apps,
