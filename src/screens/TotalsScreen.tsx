@@ -22,7 +22,15 @@ function formatHoursDecimal(m: number): string {
 }
 
 export default function TotalsScreen({}: Props) {
-  const { earliestDate, totals, totalMinutes, daysCount, loading } = useAppTotals();
+  const {
+    earliestDate,
+    totals,
+    totalMinutes,
+    daysCount,
+    recentTotalMinutes,
+    recentDaysCount,
+    loading,
+  } = useAppTotals(14);
 
   if (loading) {
     return (
@@ -41,6 +49,7 @@ export default function TotalsScreen({}: Props) {
   }
 
   const avgPerDay = daysCount > 0 ? totalMinutes / daysCount : 0;
+  const recentAvg = recentDaysCount > 0 ? recentTotalMinutes / recentDaysCount : 0;
 
   return (
     <View style={styles.container}>
@@ -51,6 +60,7 @@ export default function TotalsScreen({}: Props) {
         </Text>
       )}
 
+      <Text style={styles.sectionHeader}>All time</Text>
       <View style={styles.summary}>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Total</Text>
@@ -59,6 +69,18 @@ export default function TotalsScreen({}: Props) {
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Average</Text>
           <Text style={styles.summaryValue}>{formatHoursDecimal(avgPerDay)} / day</Text>
+        </View>
+      </View>
+
+      <Text style={styles.sectionHeader}>Last 2 weeks ({recentDaysCount} day{recentDaysCount === 1 ? '' : 's'})</Text>
+      <View style={styles.summary}>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total</Text>
+          <Text style={styles.summaryValue}>{formatHoursDecimal(recentTotalMinutes)}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Average</Text>
+          <Text style={styles.summaryValue}>{formatHoursDecimal(recentAvg)} / day</Text>
         </View>
       </View>
 
