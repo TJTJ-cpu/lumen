@@ -17,8 +17,12 @@ function formatMinutes(m: number): string {
   return `${h}h ${rem}m`;
 }
 
+function formatHoursDecimal(m: number): string {
+  return `${(m / 60).toFixed(1)} hours`;
+}
+
 export default function TotalsScreen({}: Props) {
-  const { earliestDate, totals, loading } = useAppTotals();
+  const { earliestDate, totals, totalMinutes, daysCount, loading } = useAppTotals();
 
   if (loading) {
     return (
@@ -36,12 +40,29 @@ export default function TotalsScreen({}: Props) {
     );
   }
 
+  const avgPerDay = daysCount > 0 ? totalMinutes / daysCount : 0;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Total Time</Text>
       {earliestDate && (
-        <Text style={styles.subtitle}>Since {formatSinceDate(earliestDate)}</Text>
+        <Text style={styles.subtitle}>
+          Since {formatSinceDate(earliestDate)} ({daysCount} day{daysCount === 1 ? '' : 's'})
+        </Text>
       )}
+
+      <View style={styles.summary}>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total</Text>
+          <Text style={styles.summaryValue}>{formatHoursDecimal(totalMinutes)}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Average</Text>
+          <Text style={styles.summaryValue}>{formatHoursDecimal(avgPerDay)} / day</Text>
+        </View>
+      </View>
+
+      <Text style={styles.sectionHeader}>By app</Text>
       <FlatList
         data={totals}
         keyExtractor={(item) => item.name}
@@ -62,7 +83,12 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   empty: { fontSize: 14, color: '#666', textAlign: 'center' },
   title: { fontSize: 32, fontWeight: '600', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 24 },
+  subtitle: { fontSize: 14, color: '#666', marginBottom: 16 },
+  summary: { marginBottom: 24, paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: '#ddd' },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+  summaryLabel: { fontSize: 16, fontWeight: '600', color: '#111' },
+  summaryValue: { fontSize: 16, color: '#111', fontVariant: ['tabular-nums'] },
+  sectionHeader: { fontSize: 13, fontWeight: '600', color: '#666', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
   list: { paddingBottom: 24 },
   row: {
     flexDirection: 'row',

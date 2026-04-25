@@ -6,11 +6,15 @@ import { getAppTotals } from '../services/storage';
 export function useAppTotals(): {
   earliestDate: string | null;
   totals: AppUsage[];
+  totalMinutes: number;
+  daysCount: number;
   loading: boolean;
   refresh: () => Promise<void>;
 } {
   const [earliestDate, setEarliestDate] = useState<string | null>(null);
   const [totals, setTotals] = useState<AppUsage[]>([]);
+  const [totalMinutes, setTotalMinutes] = useState(0);
+  const [daysCount, setDaysCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -18,6 +22,8 @@ export function useAppTotals(): {
     const result = await getAppTotals();
     setEarliestDate(result.earliestDate);
     setTotals(result.totals);
+    setTotalMinutes(result.totalMinutes);
+    setDaysCount(result.daysCount);
     setLoading(false);
   }, []);
 
@@ -27,5 +33,5 @@ export function useAppTotals(): {
     }, [refresh])
   );
 
-  return { earliestDate, totals, loading, refresh };
+  return { earliestDate, totals, totalMinutes, daysCount, loading, refresh };
 }

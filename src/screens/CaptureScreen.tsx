@@ -19,6 +19,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Capture'>;
 
 export default function CaptureScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const runShortcut = () => {
@@ -36,43 +37,52 @@ export default function CaptureScreen({ navigation }: Props) {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: 0,
       base64: true,
       quality: 1,
     });
     if (result.canceled) return;
 
-    const asset = result.assets[0];
-    if (!asset.base64) {
+    const assets = result.assets.filter(a => a.base64);
+    if (assets.length === 0) {
       setError('No base64 data from picker.');
       return;
     }
 
     setLoading(true);
-    try {
-      const parsed = await parseScreenTime(
-        asset.base64,
-        asset.mimeType ?? 'image/jpeg'
-      );
+    let success = 0;
+    let failed = 0;
 
-      const date = parsed.date ?? new Date().toISOString().slice(0, 10);
-
-      await saveDailyLog({
-        date,
-        screenTimeTotalMin: parsed.total_minutes,
-        screenTimeApps: parsed.apps,
-        screenTimeHourly: parsed.hourly,
-      });
-
-      Alert.alert(
-        'Saved',
-        `Screen time for ${date} saved. Total: ${parsed.total_minutes} min`
-      );
-      navigation.goBack();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
+    for (let i = 0; i < assets.length; i++) {
+      setProgress(`Processing ${i + 1} of ${assets.length}…`);
+      try {
+        const parsed = await parseScreenTime(
+          assets[i].base64!,
+          assets[i].mimeType ?? 'image/jpeg'
+        );
+        const date = parsed.date ?? new Date().toISOString().slice(0, 10);
+        await saveDailyLog({
+          date,
+          screenTimeTotalMin: parsed.total_minutes,
+          screenTimeApps: parsed.apps,
+          screenTimeHourly: parsed.hourly,
+        });
+        success++;
+      } catch (e) {
+        console.warn(`Failed on image ${i + 1}:`, e);
+        failed++;
+      }
     }
+
+    setLoading(false);
+    setProgress(null);
+
+    Alert.alert(
+      'Done',
+      `Saved ${success}.${failed > 0 ? ` Failed: ${failed}.` : ''}`
+    );
+    navigation.goBack();
   };
 
   return (
@@ -84,7 +94,10 @@ export default function CaptureScreen({ navigation }: Props) {
       </Text>
 
       {loading ? (
-        <ActivityIndicator size="large" style={styles.spinner} />
+        <View style={styles.loadingBlock}>
+          <ActivityIndicator size="large" />
+          {progress && <Text style={styles.progress}>{progress}</Text>}
+        </View>
       ) : (
         <View style={styles.buttons}>
           <Button title="1. Run LumenCapture Shortcut" onPress={runShortcut} />
@@ -103,5 +116,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, color: '#666', marginBottom: 24, textAlign: 'center' },
   buttons: { gap: 12, width: '100%' },
   spinner: { marginVertical: 24 },
+  loadingBlock: { alignItems: 'center', marginVertical: 24 },
+  progress: { marginTop: 12, fontSize: 14, color: '#555' },
   error: { color: '#c00', marginTop: 24, textAlign: 'center' },
 });

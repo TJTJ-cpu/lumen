@@ -28,40 +28,78 @@ Rules:
 - Return nothing except the JSON object`;
 
 
-export async function parseScreenTime(base64Image: string, mimeType: string = 'image/jpeg'): Promise<GeminiScreenTimeResponse>{
-    const todayISO = new Date().toISOString().slice(0, 10);
-    const prompt = `Today's date is ${todayISO}. If the screenshot shows a day/month without a year (e.g. "Yesterday, 22 April"), infer the year from today's date — prefer the most recent matching day that is not in the future.\n\n${PARSE_PROMPT}`;
+const MAX_ATTEMPTS = 5;
+const BASE_DELAY_MS = 1000;
 
-    const res = await fetch(`${ENDPOINT}?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            { inline_data: { mime_type: mimeType, data: base64Image } },
-          ],
-        },
-      ],
-      generationConfig: {
-        response_mime_type: 'application/json',
-        temperature: 0,
+function isRetryable(status: number): boolean {
+  return status === 429 || status === 500 || status === 502 || status === 503;
+}
+
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
+export async function parseScreenTime(
+  base64Image: string,
+  mimeType: string = 'image/jpeg'
+): Promise<GeminiScreenTimeResponse> {
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const prompt = `Today's date is ${todayISO}. If the screenshot shows a day/month without a year (e.g. "Yesterday, 22 April"), infer the year from today's date — prefer the most recent matching day that is not in the future.\n\n${PARSE_PROMPT}`;
+
+  const body = JSON.stringify({
+    contents: [
+      {
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: mimeType, data: base64Image } },
+        ],
       },
-    }),
+    ],
+    generationConfig: {
+      response_mime_type: 'application/json',
+      temperature: 0,
+    },
   });
 
-  if (!res.ok) {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(`${ENDPOINT}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+    } catch (err) {
+      const isLast = attempt === MAX_ATTEMPTS;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (isLast) {
+        throw new Error(`Gemini network error after ${attempt} attempt(s): ${msg}`);
+      }
+      const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 500);
+      console.log(`Gemini network error on attempt ${attempt} (${msg}), retrying in ${delayMs}ms`);
+      await sleep(delayMs);
+      continue;
+    }
+
+    if (res.ok) {
+      const json = await res.json();
+      const text: string | undefined = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        throw new Error(`Gemini returned no text: ${JSON.stringify(json)}`);
+      }
+      return JSON.parse(text) as GeminiScreenTimeResponse;
+    }
+
     const errText = await res.text();
-    throw new Error(`Gemini API error ${res.status}: ${errText}`);
+    const isLast = attempt === MAX_ATTEMPTS;
+
+    if (!isRetryable(res.status) || isLast) {
+      throw new Error(`Gemini API error ${res.status} after ${attempt} attempt(s): ${errText}`);
+    }
+
+    const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 500);
+    console.log(`Gemini ${res.status} on attempt ${attempt}, retrying in ${delayMs}ms`);
+    await sleep(delayMs);
   }
 
-  const json = await res.json();
-  const text: string | undefined = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error(`Gemini returned no text: ${JSON.stringify(json)}`);
-  }
-
-  return JSON.parse(text) as GeminiScreenTimeResponse;
+  throw new Error('parseScreenTime: exhausted retries');
 }
 

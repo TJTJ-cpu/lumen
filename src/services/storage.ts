@@ -169,6 +169,8 @@ export async function wipeDailyLogs(): Promise<void> {
 export async function getAppTotals(): Promise<{
   earliestDate: string | null;
   totals: AppUsage[];
+  totalMinutes: number;
+  daysCount: number;
 }> {
   const db = await getDb();
   const rows = await db.getAllAsync<{ date: string; screen_time_apps: string | null }>(
@@ -176,7 +178,7 @@ export async function getAppTotals(): Promise<{
   );
 
   if (rows.length === 0) {
-    return { earliestDate: null, totals: [] };
+    return { earliestDate: null, totals: [], totalMinutes: 0, daysCount: 0 };
   }
 
   const earliestDate = rows[0].date;
@@ -194,7 +196,9 @@ export async function getAppTotals(): Promise<{
     .map(([name, minutes]) => ({ name, minutes }))
     .sort((a, b) => b.minutes - a.minutes);
 
-  return { earliestDate, totals };
+  const totalMinutes = totals.reduce((sum, app) => sum + app.minutes, 0);
+
+  return { earliestDate, totals, totalMinutes, daysCount: rows.length };
 }
 
 export async function getRecentDailyLogs(limit: number): Promise<DailyLog[]> {
