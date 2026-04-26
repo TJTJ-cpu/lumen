@@ -1,7 +1,7 @@
 // src/services/sync.ts
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants/config';
-import { upsertDailyLog } from './storage';
+import { upsertDailyLog, getRecentDailyLogs } from './storage';
 import type { DailyLog } from '../types';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -48,5 +48,21 @@ export async function saveDailyLog(
   } catch (err) {
     console.warn('Sync push failed (data saved locally):', err);
   }
+}
+
+export async function backfillToSupabase(): Promise<{ pushed: number; failed: number }> {
+  const logs = await getRecentDailyLogs(10000);
+  let pushed = 0;
+  let failed = 0;
+  for (const log of logs) {
+    try {
+      await pushDailyLog(log);
+      pushed++;
+    } catch (err) {
+      console.warn(`Backfill failed for ${log.date}:`, err);
+      failed++;
+    }
+  }
+  return { pushed, failed };
 }
 

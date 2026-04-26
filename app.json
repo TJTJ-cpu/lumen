@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.tjmady.lumen"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +28,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sqlite"
-    ]
+  "expo-sqlite",
+  [
+    "react-native-health",
+    {
+      "isClinicalDataEnabled": false,
+      "healthSharePermission": "Lumen reads sleep, heart rate, HRV and step data to correlate with your screen time.",
+      "healthUpdatePermission": "Lumen does not write health data."
+    }
+  ]]
   }
 }

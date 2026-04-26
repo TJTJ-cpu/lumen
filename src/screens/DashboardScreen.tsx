@@ -4,6 +4,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { useDailyLog } from '../hooks/useDailyLog';
 import { upsertDailyLog, wipeDailyLogs } from '../services/storage';
+import { backfillToSupabase } from '../services/sync';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
@@ -19,6 +20,14 @@ export default function DashboardScreen({ navigation }: Props) {
       screenTimeTotalMin: 180,
     });
     await refresh();
+  };
+
+  const onBackfill = async () => {
+    const result = await backfillToSupabase();
+    Alert.alert(
+      'Backfill done',
+      `Pushed ${result.pushed}.${result.failed > 0 ? ` Failed ${result.failed}.` : ''}`
+    );
   };
 
   const onWipe = () => {
@@ -93,6 +102,7 @@ export default function DashboardScreen({ navigation }: Props) {
         <Button title="Total Screen Time" onPress={() => navigation.navigate('Totals')} />
         <Button title="History" onPress={() => navigation.navigate('History')} />
         <Button title="Capture Screen Time" onPress={() => navigation.navigate('Capture')} />
+        <Button title="Sync to Supabase" onPress={onBackfill} />
         <Button title="Wipe DB" color="#c00" onPress={onWipe} />
       </View>
     </ScrollView>
