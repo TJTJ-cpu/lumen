@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "dev.tjmady.lumen"
+      "bundleIdentifier": "dev.tjmady.lumen",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -28,14 +31,21 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-  "expo-sqlite",
-  [
-    "react-native-health",
-    {
-      "isClinicalDataEnabled": false,
-      "healthSharePermission": "Lumen reads sleep, heart rate, HRV and step data to correlate with your screen time.",
-      "healthUpdatePermission": "Lumen does not write health data."
-    }
-  ]]
+      "expo-sqlite",
+      [
+        "react-native-health",
+        {
+          "isClinicalDataEnabled": false,
+          "healthSharePermission": "Lumen reads sleep, heart rate, HRV and step data to correlate with your screen time.",
+          "healthUpdatePermission": "Lumen does not write health data."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3cb5ce7d-8182-4db0-bfb4-80cddd020561"
+      }
+    },
+    "owner": "tjtj-cpu-expo"
   }
 }
