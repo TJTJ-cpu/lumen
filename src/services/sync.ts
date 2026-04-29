@@ -50,6 +50,43 @@ export async function saveDailyLog(
   }
 }
 
+function rowToLog(row: Record<string, unknown>): Partial<DailyLog> & { date: string } {
+  const log: Partial<DailyLog> & { date: string } = { date: row.date as string };
+  if (row.sleep_start != null) log.sleepStart = row.sleep_start as string;
+  if (row.sleep_end != null) log.sleepEnd = row.sleep_end as string;
+  if (row.sleep_duration_min != null) log.sleepDurationMin = row.sleep_duration_min as number;
+  if (row.sleep_deep_min != null) log.sleepDeepMin = row.sleep_deep_min as number;
+  if (row.sleep_rem_min != null) log.sleepRemMin = row.sleep_rem_min as number;
+  if (row.sleep_light_min != null) log.sleepLightMin = row.sleep_light_min as number;
+  if (row.sleep_score != null) log.sleepScore = row.sleep_score as number;
+  if (row.screen_time_total_min != null) log.screenTimeTotalMin = row.screen_time_total_min as number;
+  if (row.screen_time_apps != null) log.screenTimeApps = JSON.parse(row.screen_time_apps as string);
+  if (row.screen_time_hourly != null) log.screenTimeHourly = JSON.parse(row.screen_time_hourly as string);
+  if (row.resting_hr != null) log.restingHr = row.resting_hr as number;
+  if (row.hrv != null) log.hrv = row.hrv as number;
+  if (row.steps != null) log.steps = row.steps as number;
+  if (row.insight != null) log.insight = row.insight as string;
+  if (row.insight_generated_at != null) log.insightGeneratedAt = row.insight_generated_at as string;
+  return log;
+}
+
+export async function pullFromSupabase(): Promise<{ restored: number; failed: number }> {
+  const { data, error } = await supabase.from('daily_log').select('*');
+  if (error) throw new Error(`Supabase pull failed: ${error.message}`);
+  let restored = 0;
+  let failed = 0;
+  for (const row of (data ?? []) as Record<string, unknown>[]) {
+    try {
+      await upsertDailyLog(rowToLog(row));
+      restored++;
+    } catch (err) {
+      console.warn(`Restore failed for ${row.date}:`, err);
+      failed++;
+    }
+  }
+  return { restored, failed };
+}
+
 export async function backfillToSupabase(): Promise<{ pushed: number; failed: number }> {
   const logs = await getRecentDailyLogs(10000);
   let pushed = 0;

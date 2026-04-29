@@ -1,4 +1,5 @@
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, DailyLog } from '../types';
 import { useRecentDailyLogs } from '../hooks/useRecentDailyLogs';
@@ -36,18 +37,34 @@ export default function HistoryScreen({}: Props) {
   );
 }
 
+function firstSentence(text: string): string {
+  const end = text.search(/[.!?]/);
+  return end === -1 ? text : text.slice(0, end + 1);
+}
+
 function DayCard({ log }: { log: DailyLog }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const dateLabel = new Date(log.date + 'T12:00:00').toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+  });
+
+  const preview = log.insight ? firstSentence(log.insight) : null;
+  const hasMore = log.insight && log.insight !== preview;
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.date}>{log.date}</Text>
-      <Text style={styles.row}>Sleep: {log.sleepDurationMin ?? '—'} min</Text>
+    <TouchableOpacity style={styles.card} onPress={() => setExpanded(e => !e)} activeOpacity={0.8}>
+      <Text style={styles.date}>{dateLabel}</Text>
       <Text style={styles.row}>Screen time: {log.screenTimeTotalMin ?? '—'} min</Text>
       {log.insight && (
-        <Text style={styles.insight} numberOfLines={2}>
-          {log.insight}
+        <Text style={styles.insight}>
+          {expanded ? log.insight : preview}{!expanded && hasMore ? ' …' : ''}
         </Text>
       )}
-    </View>
+      {log.insight && (
+        <Text style={styles.toggle}>{expanded ? 'Show less' : 'Show more'}</Text>
+      )}
+    </TouchableOpacity>
   );
 }
 
@@ -59,4 +76,5 @@ const styles = StyleSheet.create({
   date: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
   row: { fontSize: 14, color: '#333', marginBottom: 4 },
   insight: { fontSize: 13, color: '#666', marginTop: 8, fontStyle: 'italic' },
+  toggle: { fontSize: 12, color: '#999', marginTop: 4 },
 });

@@ -1,8 +1,8 @@
 import { GEMINI_API_KEY } from "../constants/config";
-import type { GeminiScreenTimeResponse } from "../types";
+import type { AppUsage, GeminiScreenTimeResponse } from "../types";
 
-const MODEL = 'gemini-2.5-flash';
-// const MODEL = 'gemini-2.5-flash-lite';
+// const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-2.0-flash-lite';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 const PARSE_PROMPT = `You are parsing an iOS Screen Time screenshot. Extract all visible data and return ONLY a valid JSON object with this exact structure, no preamble or markdown:
@@ -101,5 +101,71 @@ export async function parseScreenTime(
   }
 
   throw new Error('parseScreenTime: exhausted retries');
+}
+
+export async function generateInsight(
+  date: string,
+  logs: Array<{ date: string; screenTimeTotalMin?: number; screenTimeApps?: AppUsage[] }>
+): Promise<string> {
+  const logsWithData = logs.filter(l => l.screenTimeTotalMin && l.screenTimeApps?.length);
+  if (logsWithData.length === 0) throw new Error('No screen time data to generate insight from');
+
+  const dailySummaries = logsWithData.map(l => {
+    const h = Math.floor(l.screenTimeTotalMin! / 60);
+    const m = l.screenTimeTotalMin! % 60;
+    const total = h > 0 ? `${h}h ${m}m` : `${m}m`;
+    const topApps = l.screenTimeApps!.slice(0, 3).map(a => `${a.name} (${a.minutes}m)`).join(', ');
+    return `- ${l.date}: ${total} — ${topApps}`;
+  }).join('\n');
+
+  const prompt = `You are TJ's blunt personal analyst. TJ is 23 and wants honest feedback, not motivational fluff.
+
+Analyse his screen time for the week ending ${date}. Write 2-3 sentences that:
+1. Name the dominant app(s) with exact numbers
+2. Call out whether usage is getting better or worse across the week
+3. End with one specific, realistic change he can make this week — not generic advice
+
+Weekly data:
+${dailySummaries}
+
+Rules: second person ("You"), no bullet points, no headers, no filler like "it's important to" or "consider trying". Be direct. Return only the insight text.`;
+
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.7 },
+  });
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(`${ENDPOINT}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+    } catch (err) {
+      const isLast = attempt === MAX_ATTEMPTS;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (isLast) throw new Error(`Gemini network error after ${attempt} attempt(s): ${msg}`);
+      await sleep(BASE_DELAY_MS * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 500));
+      continue;
+    }
+
+    if (res.ok) {
+      const json = await res.json();
+      const text: string | undefined = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error(`Gemini returned no text: ${JSON.stringify(json)}`);
+      return text.trim();
+    }
+
+    const errText = await res.text();
+    const isLast = attempt === MAX_ATTEMPTS;
+    if (!isRetryable(res.status) || isLast) {
+      throw new Error(`Gemini API error ${res.status} after ${attempt} attempt(s): ${errText}`);
+    }
+    await sleep(BASE_DELAY_MS * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 500));
+  }
+
+  throw new Error('generateInsight: exhausted retries');
 }
 

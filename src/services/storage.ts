@@ -166,6 +166,11 @@ export async function wipeDailyLogs(): Promise<void> {
   await db.runAsync('DELETE FROM daily_log');
 }
 
+export async function wipeInsights(): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(`UPDATE daily_log SET insight = NULL, insight_generated_at = NULL`);
+}
+
 export async function getAppTotals(recentDays: number = 14): Promise<{
   earliestDate: string | null;
   totals: AppUsage[];
