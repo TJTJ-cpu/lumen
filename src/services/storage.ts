@@ -171,6 +171,51 @@ export async function wipeInsights(): Promise<void> {
   await db.runAsync(`UPDATE daily_log SET insight = NULL, insight_generated_at = NULL`);
 }
 
+export async function getCorrelationData(): Promise<Array<{
+  date: string;
+  screenTimeTotalMin?: number;
+  screenTimeApps?: AppUsage[];
+  sleepDurationMin?: number;
+  sleepDeepMin?: number;
+  sleepRemMin?: number;
+}>> {
+  const logs = await getRecentDailyLogs(10000);
+  return logs
+    .filter(l => l.screenTimeTotalMin || l.sleepDurationMin)
+    .map(l => ({
+      date: l.date,
+      screenTimeTotalMin: l.screenTimeTotalMin,
+      screenTimeApps: l.screenTimeApps,
+      sleepDurationMin: l.sleepDurationMin,
+      sleepDeepMin: l.sleepDeepMin,
+      sleepRemMin: l.sleepRemMin,
+    }));
+}
+
+export async function importHealthData(
+  healthData: Record<string, {
+    steps?: number; restingHr?: number; hrv?: number;
+    sleepStart?: string; sleepEnd?: string; sleepDurationMin?: number;
+    sleepDeepMin?: number; sleepRemMin?: number; sleepLightMin?: number;
+  }>
+): Promise<{ imported: number; skipped: number }> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{ date: string }>(
+    `SELECT date FROM daily_log WHERE screen_time_total_min IS NOT NULL`
+  );
+  const screenTimeDates = new Set(rows.map(r => r.date));
+  let imported = 0, skipped = 0;
+  for (const [date, health] of Object.entries(healthData)) {
+    if (screenTimeDates.has(date)) {
+      await upsertDailyLog({ date, ...health });
+      imported++;
+    } else {
+      skipped++;
+    }
+  }
+  return { imported, skipped };
+}
+
 export async function getAppTotals(recentDays: number = 14): Promise<{
   earliestDate: string | null;
   totals: AppUsage[];

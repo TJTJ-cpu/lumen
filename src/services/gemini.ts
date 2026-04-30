@@ -2,7 +2,7 @@ import { GEMINI_API_KEY } from "../constants/config";
 import type { AppUsage, GeminiScreenTimeResponse } from "../types";
 
 // const MODEL = 'gemini-2.5-flash';
-const MODEL = 'gemini-2.0-flash-lite';
+const MODEL = 'gemini-2.5-flash';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 const PARSE_PROMPT = `You are parsing an iOS Screen Time screenshot. Extract all visible data and return ONLY a valid JSON object with this exact structure, no preamble or markdown:
@@ -103,32 +103,41 @@ export async function parseScreenTime(
   throw new Error('parseScreenTime: exhausted retries');
 }
 
-export async function generateInsight(
-  date: string,
-  logs: Array<{ date: string; screenTimeTotalMin?: number; screenTimeApps?: AppUsage[] }>
+export async function generateOverallInsight(
+  logs: Array<{
+    date: string;
+    screenTimeTotalMin?: number;
+    screenTimeApps?: AppUsage[];
+    sleepDurationMin?: number;
+    sleepDeepMin?: number;
+    sleepRemMin?: number;
+  }>
 ): Promise<string> {
-  const logsWithData = logs.filter(l => l.screenTimeTotalMin && l.screenTimeApps?.length);
-  if (logsWithData.length === 0) throw new Error('No screen time data to generate insight from');
+  const withBoth = logs.filter(l => l.screenTimeTotalMin && l.sleepDurationMin);
+  if (withBoth.length === 0) throw new Error('No days with both screen time and sleep data');
 
-  const dailySummaries = logsWithData.map(l => {
-    const h = Math.floor(l.screenTimeTotalMin! / 60);
-    const m = l.screenTimeTotalMin! % 60;
-    const total = h > 0 ? `${h}h ${m}m` : `${m}m`;
-    const topApps = l.screenTimeApps!.slice(0, 3).map(a => `${a.name} (${a.minutes}m)`).join(', ');
-    return `- ${l.date}: ${total} — ${topApps}`;
+  const rows = withBoth.map(l => {
+    const screenH = Math.floor(l.screenTimeTotalMin! / 60);
+    const screenM = l.screenTimeTotalMin! % 60;
+    const screen = screenH > 0 ? `${screenH}h ${screenM}m` : `${screenM}m`;
+    const sleepH = Math.floor(l.sleepDurationMin! / 60);
+    const sleepM = l.sleepDurationMin! % 60;
+    const sleep = `${sleepH}h ${sleepM}m`;
+    const deep = l.sleepDeepMin ?? 0;
+    const rem = l.sleepRemMin ?? 0;
+    const topApps = l.screenTimeApps?.slice(0, 3).map(a => `${a.name} ${a.minutes}m`).join(', ') ?? '';
+    return `${l.date}: screen ${screen} (${topApps}), sleep ${sleep} (deep ${deep}m, REM ${rem}m)`;
   }).join('\n');
 
-  const prompt = `You are TJ's blunt personal analyst. TJ is 23 and wants honest feedback, not motivational fluff.
+  const prompt = `You are TJ's blunt personal data analyst. TJ is 23, focused on self-improvement.
 
-Analyse his screen time for the week ending ${date}. Write 2-3 sentences that:
-1. Name the dominant app(s) with exact numbers
-2. Call out whether usage is getting better or worse across the week
-3. End with one specific, realistic change he can make this week — not generic advice
+Below is his history of screen time and sleep data. Find the strongest real correlation between his phone habits and sleep quality. Be specific — name actual apps, actual numbers, actual patterns.
 
-Weekly data:
-${dailySummaries}
+Data (${withBoth.length} days):
+${rows}
 
-Rules: second person ("You"), no bullet points, no headers, no filler like "it's important to" or "consider trying". Be direct. Return only the insight text.`;
+Write 3-4 sentences. Lead with the strongest correlation you find. Be direct and specific — use the actual numbers. End with one concrete change.
+Rules: second person ("You"), no bullet points, no headers, no filler. Return only the insight text.`;
 
   const body = JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
@@ -166,6 +175,6 @@ Rules: second person ("You"), no bullet points, no headers, no filler like "it's
     await sleep(BASE_DELAY_MS * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 500));
   }
 
-  throw new Error('generateInsight: exhausted retries');
+  throw new Error('generateOverallInsight: exhausted retries');
 }
 

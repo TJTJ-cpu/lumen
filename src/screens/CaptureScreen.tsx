@@ -62,9 +62,10 @@ export default function CaptureScreen({ navigation }: Props) {
           assets[i].mimeType ?? 'image/jpeg'
         );
         const date = parsed.date ?? new Date().toISOString().slice(0, 10);
+        const totalMin = parsed.apps.reduce((sum, a) => sum + a.minutes, 0);
         await saveDailyLog({
           date,
-          screenTimeTotalMin: parsed.total_minutes,
+          screenTimeTotalMin: totalMin,
           screenTimeApps: parsed.apps,
           screenTimeHourly: parsed.hourly,
         });

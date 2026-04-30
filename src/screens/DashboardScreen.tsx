@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View, Button, ScrollView, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { useDailyLog } from '../hooks/useDailyLog';
-import { useInsight } from '../hooks/useInsight';
-import { wipeDailyLogs, wipeInsights } from '../services/storage';
+import { importHealthData, getCorrelationData } from '../services/storage';
+import { generateOverallInsight } from '../services/gemini';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { backfillToSupabase, pullFromSupabase } from '../services/sync';
+
+const INSIGHT_KEY = 'overall_insight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
@@ -23,7 +28,29 @@ export default function DashboardScreen({ navigation }: Props) {
     offset === 1 ? 'Yesterday' :
     dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const { log, loading, refresh } = useDailyLog(date);
-  const { insight, loading: insightLoading } = useInsight(log);
+  const [insight, setInsight] = useState<string | null>(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+
+  const onGenerateInsight = async () => {
+    setInsightLoading(true);
+    try {
+      const data = await getCorrelationData();
+      const text = await generateOverallInsight(data);
+      await AsyncStorage.setItem(INSIGHT_KEY, text);
+      setInsight(text);
+    } catch (err) {
+      Alert.alert('Failed', err instanceof Error ? err.message : 'Could not generate insight.');
+    } finally {
+      setInsightLoading(false);
+    }
+  };
+
+  const loadInsight = async () => {
+    const saved = await AsyncStorage.getItem(INSIGHT_KEY);
+    if (saved) setInsight(saved);
+  };
+
+  useState(() => { loadInsight(); });
 
   const onRestore = async () => {
     const result = await pullFromSupabase();
@@ -42,43 +69,22 @@ export default function DashboardScreen({ navigation }: Props) {
     );
   };
 
-  const onWipeInsights = () => {
+  const onImportHealth = async () => {
+    const result = await DocumentPicker.getDocumentAsync({ type: 'application/json' });
+    if (result.canceled) return;
+    const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
+    const healthData = JSON.parse(content);
+    const healthDates = Object.keys(healthData).length;
+    const healthWithSleep = Object.values(healthData).filter((d: any) => d.sleepDurationMin).length;
+    const { imported, skipped } = await importHealthData(healthData);
+    await refresh();
     Alert.alert(
-      'Wipe all insights?',
-      'This clears every saved insight. They will regenerate next time you view each day.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Wipe',
-          style: 'destructive',
-          onPress: async () => {
-            await wipeInsights();
-            await refresh();
-          },
-        },
-      ]
+      'Health import',
+      `File has ${healthDates} days (${healthWithSleep} with sleep).\nImported: ${imported}\nSkipped (no screen time match): ${skipped}`
     );
   };
 
-  const onWipe = () => {
-    Alert.alert(
-      'Wipe DB?',
-      'This deletes all local rows. Cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Wipe',
-          style: 'destructive',
-          onPress: async () => {
-            await wipeDailyLogs();
-            await refresh();
-          },
-        },
-      ]
-    );
-  };
-
-  return (
+return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Lumen</Text>
       <Text style={styles.subtitle}>{dateLabel}</Text>
@@ -96,8 +102,8 @@ export default function DashboardScreen({ navigation }: Props) {
         <Text style={styles.body}>Loading…</Text>
       ) : log ? (
         <View style={styles.dataBlock}>
-          <Text style={styles.body}>Sleep: {log.sleepDurationMin ?? '—'} min</Text>
-          <Text style={styles.body}>Screen time: {log.screenTimeTotalMin ?? '—'} min</Text>
+          <Text style={styles.body}>Sleep: {log.sleepDurationMin ? formatMins(log.sleepDurationMin) : '—'}</Text>
+          <Text style={styles.body}>Screen time: {log.screenTimeTotalMin ? formatMins(log.screenTimeTotalMin) : '—'}</Text>
 
           {log.screenTimeApps && log.screenTimeApps.length > 0 && (() => {
             const max = Math.max(...log.screenTimeApps!.map(a => a.minutes));
@@ -149,9 +155,10 @@ export default function DashboardScreen({ navigation }: Props) {
         <Button title="Total Screen Time" onPress={() => navigation.navigate('Totals')} />
         <Button title="History" onPress={() => navigation.navigate('History')} />
         <Button title="Capture Screen Time" onPress={() => navigation.navigate('Capture')} />
+        <Button title="Import Health Data" onPress={onImportHealth} />
         <Button title="Restore from Supabase" onPress={onRestore} />
         <Button title="Sync to Supabase" onPress={onBackfill} />
-        <Button title="Wipe Insights" color="#c00" onPress={onWipeInsights} />
+        <Button title={insight ? "Regenerate Insight" : "Generate Insight"} onPress={onGenerateInsight} />
         {/* <Button title="Wipe DB" color="#c00" onPress={onWipe} /> */}
       </View>
     </ScrollView>
