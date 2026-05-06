@@ -1,4 +1,5 @@
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { useAppTotals } from '../hooks/useAppTotals';
@@ -22,9 +23,11 @@ function formatHoursDecimal(m: number): string {
 }
 
 export default function TotalsScreen({}: Props) {
+  const [showRecent, setShowRecent] = useState(false);
   const {
     earliestDate,
     totals,
+    recentTotals,
     totalMinutes,
     daysCount,
     recentTotalMinutes,
@@ -84,9 +87,22 @@ export default function TotalsScreen({}: Props) {
         </View>
       </View>
 
-      <Text style={styles.sectionHeader}>By app</Text>
+      <View style={styles.toggleRow}>
+        <TouchableOpacity
+          style={[styles.toggleBtn, !showRecent && styles.toggleActive]}
+          onPress={() => setShowRecent(false)}
+        >
+          <Text style={[styles.toggleText, !showRecent && styles.toggleTextActive]}>All time</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.toggleBtn, showRecent && styles.toggleActive]}
+          onPress={() => setShowRecent(true)}
+        >
+          <Text style={[styles.toggleText, showRecent && styles.toggleTextActive]}>Last 14 days</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
-        data={totals}
+        data={showRecent ? recentTotals : totals}
         keyExtractor={(item) => item.name}
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -121,4 +137,9 @@ const styles = StyleSheet.create({
   },
   appName: { fontSize: 16, color: '#111' },
   appMinutes: { fontSize: 16, color: '#555', fontVariant: ['tabular-nums'] },
+  toggleRow: { flexDirection: 'row', marginBottom: 8, borderRadius: 8, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: '#ddd' },
+  toggleBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', backgroundColor: '#f5f5f5' },
+  toggleActive: { backgroundColor: '#111' },
+  toggleText: { fontSize: 13, fontWeight: '600', color: '#555' },
+  toggleTextActive: { color: '#fff' },
 });

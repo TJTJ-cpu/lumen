@@ -219,6 +219,7 @@ export async function importHealthData(
 export async function getAppTotals(recentDays: number = 14): Promise<{
   earliestDate: string | null;
   totals: AppUsage[];
+  recentTotals: AppUsage[];
   totalMinutes: number;
   daysCount: number;
   recentTotalMinutes: number;
@@ -233,6 +234,7 @@ export async function getAppTotals(recentDays: number = 14): Promise<{
     return {
       earliestDate: null,
       totals: [],
+      recentTotals: [],
       totalMinutes: 0,
       daysCount: 0,
       recentTotalMinutes: 0,
@@ -242,6 +244,7 @@ export async function getAppTotals(recentDays: number = 14): Promise<{
 
   const earliestDate = rows[0].date;
   const sums = new Map<string, number>();
+  const recentSums = new Map<string, number>();
   const recentCutoff = new Date(Date.now() - recentDays * 86400000).toISOString().slice(0, 10);
   let recentTotalMinutes = 0;
   let recentDaysCount = 0;
@@ -259,10 +262,17 @@ export async function getAppTotals(recentDays: number = 14): Promise<{
     if (row.date >= recentCutoff) {
       recentTotalMinutes += dayMinutes;
       recentDaysCount++;
+      for (const app of apps) {
+        recentSums.set(app.name, (recentSums.get(app.name) ?? 0) + app.minutes);
+      }
     }
   }
 
   const totals = Array.from(sums.entries())
+    .map(([name, minutes]) => ({ name, minutes }))
+    .sort((a, b) => b.minutes - a.minutes);
+
+  const recentTotals = Array.from(recentSums.entries())
     .map(([name, minutes]) => ({ name, minutes }))
     .sort((a, b) => b.minutes - a.minutes);
 
@@ -271,6 +281,7 @@ export async function getAppTotals(recentDays: number = 14): Promise<{
   return {
     earliestDate,
     totals,
+    recentTotals,
     totalMinutes,
     daysCount: rows.length,
     recentTotalMinutes,
