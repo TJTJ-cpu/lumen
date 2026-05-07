@@ -8,7 +8,7 @@ import { importHealthData, getCorrelationData } from '../services/storage';
 import { generateOverallInsight } from '../services/gemini';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
-import { backfillToSupabase, pullFromSupabase } from '../services/sync';
+import { pullFromSupabase, backfillToSupabase } from '../services/sync';
 
 const INSIGHT_KEY = 'overall_insight';
 
@@ -61,26 +61,19 @@ export default function DashboardScreen({ navigation }: Props) {
     );
   };
 
-  const onBackfill = async () => {
-    const result = await backfillToSupabase();
-    Alert.alert(
-      'Backfill done',
-      `Pushed ${result.pushed}.${result.failed > 0 ? ` Failed ${result.failed}.` : ''}`
-    );
-  };
-
-  const onImportHealth = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: 'application/json' });
+const onImportHealth = async () => {
+    const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
     if (result.canceled) return;
     const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
     const healthData = JSON.parse(content);
     const healthDates = Object.keys(healthData).length;
     const healthWithSleep = Object.values(healthData).filter((d: any) => d.sleepDurationMin).length;
     const { imported, skipped } = await importHealthData(healthData);
+    await backfillToSupabase();
     await refresh();
     Alert.alert(
       'Health import',
-      `File has ${healthDates} days (${healthWithSleep} with sleep).\nImported: ${imported}\nSkipped (no screen time match): ${skipped}`
+      `File has ${healthDates} days (${healthWithSleep} with sleep).\nImported: ${imported}\nSkipped (before first screen time date): ${skipped}`
     );
   };
 
@@ -153,11 +146,9 @@ return (
 
       <View style={styles.buttons}>
         <Button title="Total Screen Time" onPress={() => navigation.navigate('Totals')} />
-        <Button title="History" onPress={() => navigation.navigate('History')} />
         <Button title="Capture Screen Time" onPress={() => navigation.navigate('Capture')} />
         <Button title="Import Health Data" onPress={onImportHealth} />
         <Button title="Restore from Supabase" onPress={onRestore} />
-        <Button title="Sync to Supabase" onPress={onBackfill} />
         <Button title={insight ? "Regenerate Insight" : "Generate Insight"} onPress={onGenerateInsight} />
         {/* <Button title="Wipe DB" color="#c00" onPress={onWipe} /> */}
       </View>

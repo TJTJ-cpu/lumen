@@ -2479,7 +2479,7 @@
     "sleepLightMin": 268
   },
   "2022-11-04": {
-    "steps": 22094,
+    "steps": 16262,
     "restingHr": 59,
     "hrv": 52,
     "sleepStart": "2022-11-04T00:36:43.000Z",
@@ -2544,7 +2544,7 @@
     "sleepLightMin": 346
   },
   "2022-11-10": {
-    "steps": 22308,
+    "steps": 17789,
     "hrv": 50,
     "sleepStart": "2022-11-09T23:44:05.000Z",
     "sleepEnd": "2022-11-10T05:59:05.000Z",
@@ -2576,7 +2576,7 @@
     "sleepLightMin": 301
   },
   "2022-11-13": {
-    "steps": 29038,
+    "steps": 19696,
     "restingHr": 58,
     "hrv": 66,
     "sleepStart": "2022-11-13T02:38:27.000Z",
@@ -8696,7 +8696,7 @@
     "sleepLightMin": 230
   },
   "2026-04-29": {
-    "steps": 10939,
+    "steps": 11323,
     "restingHr": 64,
     "hrv": 51,
     "sleepStart": "2026-04-28T21:23:33.000Z",
@@ -8705,5 +8705,93 @@
     "sleepDeepMin": 101,
     "sleepRemMin": 151,
     "sleepLightMin": 304
+  },
+  "2026-04-30": {
+    "steps": 11818,
+    "restingHr": 63,
+    "hrv": 61,
+    "sleepStart": "2026-04-29T21:58:05.000Z",
+    "sleepEnd": "2026-04-30T02:13:14.000Z",
+    "sleepDurationMin": 244,
+    "sleepDeepMin": 27,
+    "sleepRemMin": 34,
+    "sleepLightMin": 183
+  },
+  "2026-05-01": {
+    "steps": 12143,
+    "restingHr": 66,
+    "hrv": 54,
+    "sleepStart": "2026-04-30T21:42:05.000Z",
+    "sleepEnd": "2026-05-01T06:19:23.000Z",
+    "sleepDurationMin": 509,
+    "sleepDeepMin": 45,
+    "sleepRemMin": 121,
+    "sleepLightMin": 343
+  },
+  "2026-05-02": {
+    "steps": 5993,
+    "restingHr": 63,
+    "hrv": 50,
+    "sleepStart": "2026-05-02T01:00:11.000Z",
+    "sleepEnd": "2026-05-02T06:12:46.000Z",
+    "sleepDurationMin": 308,
+    "sleepDeepMin": 39,
+    "sleepRemMin": 104,
+    "sleepLightMin": 165
+  },
+  "2026-05-03": {
+    "steps": 5811,
+    "restingHr": 58,
+    "hrv": 59,
+    "sleepStart": "2026-05-02T23:19:10.000Z",
+    "sleepEnd": "2026-05-03T06:37:35.000Z",
+    "sleepDurationMin": 430,
+    "sleepDeepMin": 47,
+    "sleepRemMin": 118,
+    "sleepLightMin": 265
+  },
+  "2026-05-04": {
+    "steps": 5610,
+    "restingHr": 64,
+    "hrv": 57,
+    "sleepStart": "2026-05-04T00:11:14.000Z",
+    "sleepEnd": "2026-05-04T09:27:30.000Z",
+    "sleepDurationMin": 429,
+    "sleepDeepMin": 89,
+    "sleepRemMin": 114,
+    "sleepLightMin": 226
+  },
+  "2026-05-05": {
+    "steps": 4417,
+    "restingHr": 63,
+    "hrv": 61,
+    "sleepStart": "2026-05-05T01:31:06.000Z",
+    "sleepEnd": "2026-05-05T08:44:02.000Z",
+    "sleepDurationMin": 424,
+    "sleepDeepMin": 76,
+    "sleepRemMin": 146,
+    "sleepLightMin": 202
+  },
+  "2026-05-06": {
+    "steps": 8250,
+    "restingHr": 56,
+    "hrv": 48,
+    "sleepStart": "2026-05-06T07:00:08.000Z",
+    "sleepEnd": "2026-05-06T11:42:47.000Z",
+    "sleepDurationMin": 276,
+    "sleepDeepMin": 92,
+    "sleepRemMin": 51,
+    "sleepLightMin": 133
+  },
+  "2026-05-07": {
+    "steps": 5783,
+    "restingHr": 64,
+    "hrv": 74,
+    "sleepStart": "2026-05-07T00:41:07.000Z",
+    "sleepEnd": "2026-05-07T08:47:27.000Z",
+    "sleepDurationMin": 483,
+    "sleepDeepMin": 60,
+    "sleepRemMin": 134,
+    "sleepLightMin": 289
   }
 }

@@ -200,13 +200,15 @@ export async function importHealthData(
   }>
 ): Promise<{ imported: number; skipped: number }> {
   const db = await getDb();
-  const rows = await db.getAllAsync<{ date: string }>(
-    `SELECT date FROM daily_log WHERE screen_time_total_min IS NOT NULL`
+  const firstRow = await db.getFirstAsync<{ date: string }>(
+    `SELECT MIN(date) as date FROM daily_log WHERE screen_time_total_min IS NOT NULL`
   );
-  const screenTimeDates = new Set(rows.map(r => r.date));
+  const firstScreenTimeDate = firstRow?.date;
+  if (!firstScreenTimeDate) return { imported: 0, skipped: Object.keys(healthData).length };
+
   let imported = 0, skipped = 0;
   for (const [date, health] of Object.entries(healthData)) {
-    if (screenTimeDates.has(date)) {
+    if (date >= firstScreenTimeDate) {
       await upsertDailyLog({ date, ...health });
       imported++;
     } else {
