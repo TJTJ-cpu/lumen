@@ -7,6 +7,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import CaptureScreen from './src/screens/CaptureScreen';
 import TotalsScreen from './src/screens/TotalsScreen';
+import DetailInsightScreen from './src/screens/DetailInsightScreen';
 import { RootStackParamList } from './src/types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -20,6 +21,7 @@ export default function App() {
           <Stack.Screen name="History" component={HistoryScreen} />
           <Stack.Screen name="Capture" component={CaptureScreen} />
           <Stack.Screen name="Totals" component={TotalsScreen} options={{ title: 'Total Screen Time' }} />
+          <Stack.Screen name="DetailInsight" component={DetailInsightScreen} options={{ title: 'Detail Insight' }} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />

@@ -2,6 +2,7 @@ import { LM_STUDIO_HOST, LM_STUDIO_MODEL } from "../constants/config";
 import type { AppUsage, GeminiScreenTimeResponse } from "../types";
 import { parseScreenTimePrompt } from "../prompts/parseScreenTime";
 import { buildOverallInsightPrompt } from "../prompts/overallInsight";
+import { buildDetailInsightPrompt } from "../prompts/detailInsight";
 
 const ENDPOINT = `${LM_STUDIO_HOST}/v1/chat/completions`;
 
@@ -56,7 +57,7 @@ export async function parseScreenTime(
     {
       role: 'user',
       content: [
-        { type: 'text', text: parseScreenTimePrompt },
+        { type: 'text', text: `Today's date is ${new Date().toISOString().slice(0, 10)}. Use this to infer the correct year if the screenshot only shows a day and month.\n\n${parseScreenTimePrompt}` },
         { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Image}` } },
       ],
     },
@@ -96,5 +97,41 @@ export async function generateOverallInsight(
   }).join('\n');
 
   const messages = [{ role: 'user', content: buildOverallInsightPrompt(rows, withBoth.length) }];
+  return (await callLMStudio(messages, 0.7)).trim();
+}
+
+export async function generateDetailInsight(
+  logs: Array<{
+    date: string;
+    screenTimeTotalMin?: number;
+    screenTimeApps?: AppUsage[];
+    sleepDurationMin?: number;
+    sleepDeepMin?: number;
+    sleepRemMin?: number;
+    restingHr?: number;
+    hrv?: number;
+    steps?: number;
+  }>
+): Promise<string> {
+  if (logs.length === 0) throw new Error('No data available for the last 14 days');
+
+  const rows = logs.map(l => {
+    const parts: string[] = [`${l.date}:`];
+    if (l.screenTimeTotalMin) {
+      const topApps = l.screenTimeApps?.slice(0, 5).map(a => `${a.name} ${a.minutes}m`).join(', ') ?? '';
+      const h = Math.floor(l.screenTimeTotalMin / 60), m = l.screenTimeTotalMin % 60;
+      parts.push(`screen ${h}h ${m}m (${topApps})`);
+    }
+    if (l.sleepDurationMin) {
+      const h = Math.floor(l.sleepDurationMin / 60), m = l.sleepDurationMin % 60;
+      parts.push(`sleep ${h}h ${m}m (deep ${l.sleepDeepMin ?? 0}m, REM ${l.sleepRemMin ?? 0}m)`);
+    }
+    if (l.restingHr) parts.push(`HR ${l.restingHr}bpm`);
+    if (l.hrv) parts.push(`HRV ${l.hrv}ms`);
+    if (l.steps) parts.push(`steps ${l.steps.toLocaleString()}`);
+    return parts.join(' ');
+  }).join('\n');
+
+  const messages = [{ role: 'user', content: buildDetailInsightPrompt(rows, logs.length) }];
   return (await callLMStudio(messages, 0.7)).trim();
 }

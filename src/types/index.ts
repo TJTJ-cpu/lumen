@@ -49,4 +49,5 @@ export type RootStackParamList = {
   History: undefined;
   Capture: undefined;
   Totals: undefined;
+  DetailInsight: undefined;
 };

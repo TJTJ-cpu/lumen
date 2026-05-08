@@ -67,7 +67,6 @@ export default function CaptureScreen({ navigation }: Props) {
           date,
           screenTimeTotalMin: totalMin,
           screenTimeApps: parsed.apps,
-          screenTimeHourly: parsed.hourly,
         });
         success++;
       } catch (e) {

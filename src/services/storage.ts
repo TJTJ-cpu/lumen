@@ -179,9 +179,10 @@ export async function getCorrelationData(): Promise<Array<{
   sleepDeepMin?: number;
   sleepRemMin?: number;
 }>> {
-  const logs = await getRecentDailyLogs(10000);
+  const cutoff = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+  const logs = await getRecentDailyLogs(14);
   return logs
-    .filter(l => l.screenTimeTotalMin || l.sleepDurationMin)
+    .filter(l => l.date >= cutoff && (l.screenTimeTotalMin || l.sleepDurationMin))
     .map(l => ({
       date: l.date,
       screenTimeTotalMin: l.screenTimeTotalMin,
@@ -289,6 +290,34 @@ export async function getAppTotals(recentDays: number = 14): Promise<{
     recentTotalMinutes,
     recentDaysCount,
   };
+}
+
+export async function getDetailInsightData(): Promise<Array<{
+  date: string;
+  screenTimeTotalMin?: number;
+  screenTimeApps?: AppUsage[];
+  sleepDurationMin?: number;
+  sleepDeepMin?: number;
+  sleepRemMin?: number;
+  restingHr?: number;
+  hrv?: number;
+  steps?: number;
+}>> {
+  const cutoff = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+  const logs = await getRecentDailyLogs(14);
+  return logs
+    .filter(l => l.date >= cutoff)
+    .map(l => ({
+      date: l.date,
+      screenTimeTotalMin: l.screenTimeTotalMin,
+      screenTimeApps: l.screenTimeApps,
+      sleepDurationMin: l.sleepDurationMin,
+      sleepDeepMin: l.sleepDeepMin,
+      sleepRemMin: l.sleepRemMin,
+      restingHr: l.restingHr,
+      hrv: l.hrv,
+      steps: l.steps,
+    }));
 }
 
 export async function getRecentDailyLogs(limit: number): Promise<DailyLog[]> {

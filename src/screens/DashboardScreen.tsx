@@ -116,17 +116,6 @@ return (
             );
           })()}
 
-          {(insight || insightLoading) && (
-            <View style={styles.insightBlock}>
-              <Text style={styles.sectionTitle}>Insight</Text>
-              {insightLoading ? (
-                <Text style={styles.insightText}>Generating…</Text>
-              ) : (
-                <Text style={styles.insightText}>{insight}</Text>
-              )}
-            </View>
-          )}
-
            {/* {log.screenTimeHourly && log.screenTimeHourly.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Hourly</Text>
@@ -144,12 +133,24 @@ return (
         <Text style={styles.body}>No data for {date}</Text>
       )}
 
+      {(insight || insightLoading) && (
+        <View style={styles.insightBlock}>
+          <Text style={styles.sectionTitle}>Overall Insight</Text>
+          {insightLoading ? (
+            <Text style={styles.insightText}>Generating…</Text>
+          ) : (
+            <Text style={styles.insightText}>{insight}</Text>
+          )}
+        </View>
+      )}
+
       <View style={styles.buttons}>
         <Button title="Total Screen Time" onPress={() => navigation.navigate('Totals')} />
         <Button title="Capture Screen Time" onPress={() => navigation.navigate('Capture')} />
         <Button title="Import Health Data" onPress={onImportHealth} />
         <Button title="Restore from Supabase" onPress={onRestore} />
         <Button title={insight ? "Regenerate Insight" : "Generate Insight"} onPress={onGenerateInsight} />
+        <Button title="Detail Insight" onPress={() => navigation.navigate('DetailInsight')} />
         {/* <Button title="Wipe DB" color="#c00" onPress={onWipe} /> */}
       </View>
     </ScrollView>

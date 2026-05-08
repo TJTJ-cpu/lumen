@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+# Apple Health Data
+*.zip
+
 # Expo
 .expo/
 dist/
