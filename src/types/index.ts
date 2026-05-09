@@ -17,6 +17,8 @@ export interface DailyLog {
 
   restingHr?: number;
   hrv?: number;
+  respiratoryRate?: number;
+  wristTempDeviation?: number;
   steps?: number;
 
   insight?: string;

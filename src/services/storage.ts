@@ -17,6 +17,7 @@ export function getDb(): Promise<SQLite.SQLiteDatabase> {
 async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS daily_log (
+
       id TEXT PRIMARY KEY,
       date TEXT NOT NULL UNIQUE,
 
@@ -34,6 +35,8 @@ async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
 
       resting_hr INTEGER,
       hrv INTEGER,
+      respiratory_rate REAL,
+      wrist_temp_deviation REAL,
       steps INTEGER,
 
       insight TEXT,
@@ -43,6 +46,10 @@ async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
       updated_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  for (const col of ['respiratory_rate REAL', 'wrist_temp_deviation REAL']) {
+    try { await db.execAsync(`ALTER TABLE daily_log ADD COLUMN ${col}`); } catch (_) {}
+  }
 }
 
 type DailyLogRow = {
@@ -60,6 +67,8 @@ type DailyLogRow = {
   screen_time_hourly: string | null;
   resting_hr: number | null;
   hrv: number | null;
+  respiratory_rate: number | null;
+  wrist_temp_deviation: number | null;
   steps: number | null;
   insight: string | null;
   insight_generated_at: string | null;
@@ -88,6 +97,8 @@ function rowToDailyLog(row: DailyLogRow): DailyLog {
       : undefined,
     restingHr: row.resting_hr ?? undefined,
     hrv: row.hrv ?? undefined,
+    respiratoryRate: row.respiratory_rate ?? undefined,
+    wristTempDeviation: row.wrist_temp_deviation ?? undefined,
     steps: row.steps ?? undefined,
     insight: row.insight ?? undefined,
     insightGeneratedAt: row.insight_generated_at ?? undefined,
@@ -109,10 +120,10 @@ export async function upsertDailyLog(
       sleep_start, sleep_end, sleep_duration_min,
       sleep_deep_min, sleep_rem_min, sleep_light_min, sleep_score,
       screen_time_total_min, screen_time_apps, screen_time_hourly,
-      resting_hr, hrv, steps,
+      resting_hr, hrv, respiratory_rate, wrist_temp_deviation, steps,
       insight, insight_generated_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     ON CONFLICT(date) DO UPDATE SET
       sleep_start = COALESCE(excluded.sleep_start, sleep_start),
       sleep_end = COALESCE(excluded.sleep_end, sleep_end),
@@ -126,6 +137,8 @@ export async function upsertDailyLog(
       screen_time_hourly = COALESCE(excluded.screen_time_hourly, screen_time_hourly),
       resting_hr = COALESCE(excluded.resting_hr, resting_hr),
       hrv = COALESCE(excluded.hrv, hrv),
+      respiratory_rate = COALESCE(excluded.respiratory_rate, respiratory_rate),
+      wrist_temp_deviation = COALESCE(excluded.wrist_temp_deviation, wrist_temp_deviation),
       steps = COALESCE(excluded.steps, steps),
       insight = COALESCE(excluded.insight, insight),
       insight_generated_at = COALESCE(excluded.insight_generated_at, insight_generated_at),
@@ -145,6 +158,8 @@ export async function upsertDailyLog(
       log.screenTimeHourly ? JSON.stringify(log.screenTimeHourly) : null,
       log.restingHr ?? null,
       log.hrv ?? null,
+      log.respiratoryRate ?? null,
+      log.wristTempDeviation ?? null,
       log.steps ?? null,
       log.insight ?? null,
       log.insightGeneratedAt ?? null,
@@ -178,6 +193,9 @@ export async function getCorrelationData(): Promise<Array<{
   sleepDurationMin?: number;
   sleepDeepMin?: number;
   sleepRemMin?: number;
+  hrv?: number;
+  respiratoryRate?: number;
+  wristTempDeviation?: number;
 }>> {
   const cutoff = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
   const logs = await getRecentDailyLogs(14);
@@ -190,6 +208,9 @@ export async function getCorrelationData(): Promise<Array<{
       sleepDurationMin: l.sleepDurationMin,
       sleepDeepMin: l.sleepDeepMin,
       sleepRemMin: l.sleepRemMin,
+      hrv: l.hrv,
+      respiratoryRate: l.respiratoryRate,
+      wristTempDeviation: l.wristTempDeviation,
     }));
 }
 
@@ -301,6 +322,8 @@ export async function getDetailInsightData(): Promise<Array<{
   sleepRemMin?: number;
   restingHr?: number;
   hrv?: number;
+  respiratoryRate?: number;
+  wristTempDeviation?: number;
   steps?: number;
 }>> {
   const cutoff = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
@@ -316,8 +339,20 @@ export async function getDetailInsightData(): Promise<Array<{
       sleepRemMin: l.sleepRemMin,
       restingHr: l.restingHr,
       hrv: l.hrv,
+      respiratoryRate: l.respiratoryRate,
+      wristTempDeviation: l.wristTempDeviation,
       steps: l.steps,
     }));
+}
+
+export async function get21DayAverages(): Promise<{ hrv: number | null; respiratoryRate: number | null }> {
+  const logs = await getRecentDailyLogs(21);
+  const hrvVals = logs.map(l => l.hrv).filter((v): v is number => v != null);
+  const rrVals = logs.map(l => l.respiratoryRate).filter((v): v is number => v != null);
+  return {
+    hrv: hrvVals.length > 0 ? hrvVals.reduce((a, b) => a + b, 0) / hrvVals.length : null,
+    respiratoryRate: rrVals.length > 0 ? rrVals.reduce((a, b) => a + b, 0) / rrVals.length : null,
+  };
 }
 
 export async function getRecentDailyLogs(limit: number): Promise<DailyLog[]> {

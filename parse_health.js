@@ -70,7 +70,7 @@ const days = {};
 const allSleepSegs = [];
 
 function getDay(date) {
-  if (!days[date]) days[date] = { steps: 0, restingHr: null, hrv: [] };
+  if (!days[date]) days[date] = { steps: 0, restingHr: null, hrv: [], respiratoryRate: [], wristTemp: [] };
   return days[date];
 }
 
@@ -105,6 +105,15 @@ rl.on('line', (line) => {
     case 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN': {
       if (!isWatch(a.sourceName)) break;
       getDay(toDate(a.startDate)).hrv.push(parseFloat(a.value));
+      break;
+    }
+    case 'HKQuantityTypeIdentifierRespiratoryRate': {
+      if (!isWatch(a.sourceName)) break;
+      getDay(toDate(a.startDate)).respiratoryRate.push(parseFloat(a.value));
+      break;
+    }
+    case 'HKQuantityTypeIdentifierAppleSleepingWristTemperature': {
+      getDay(toDate(a.startDate)).wristTemp.push(parseFloat(a.value));
       break;
     }
     case 'HKCategoryTypeIdentifierSleepAnalysis': {
@@ -165,6 +174,8 @@ rl.on('close', async () => {
     if (day.steps > 0) entry.steps = day.steps;
     if (day.restingHr) entry.restingHr = day.restingHr;
     if (day.hrv.length > 0) entry.hrv = Math.round(day.hrv.reduce((a, b) => a + b, 0) / day.hrv.length);
+    if (day.respiratoryRate.length > 0) entry.respiratoryRate = parseFloat((day.respiratoryRate.reduce((a, b) => a + b, 0) / day.respiratoryRate.length).toFixed(1));
+    if (day.wristTemp.length > 0) entry.wristTempDeviation = parseFloat((day.wristTemp.reduce((a, b) => a + b, 0) / day.wristTemp.length).toFixed(2));
     if (day.sleepDurationMin) {
       entry.sleepStart = day.sleepStart;
       entry.sleepEnd = day.sleepEnd;
@@ -197,6 +208,8 @@ rl.on('close', async () => {
       steps: day.steps ?? null,
       resting_hr: day.restingHr ?? null,
       hrv: day.hrv ?? null,
+      respiratory_rate: day.respiratoryRate ?? null,
+      wrist_temp_deviation: day.wristTempDeviation ?? null,
       sleep_start: day.sleepStart ?? null,
       sleep_end: day.sleepEnd ?? null,
       sleep_duration_min: day.sleepDurationMin ?? null,

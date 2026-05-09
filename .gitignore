@@ -5,6 +5,7 @@ node_modules/
 
 # Apple Health Data
 *.zip
+health_data.json
 
 # Expo
 .expo/

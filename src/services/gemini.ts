@@ -78,6 +78,9 @@ export async function generateOverallInsight(
     sleepDurationMin?: number;
     sleepDeepMin?: number;
     sleepRemMin?: number;
+    hrv?: number;
+    respiratoryRate?: number;
+    wristTempDeviation?: number;
   }>
 ): Promise<string> {
   const withBoth = logs.filter(l => l.screenTimeTotalMin && l.sleepDurationMin);
@@ -93,7 +96,10 @@ export async function generateOverallInsight(
     const deep = l.sleepDeepMin ?? 0;
     const rem = l.sleepRemMin ?? 0;
     const topApps = l.screenTimeApps?.slice(0, 3).map(a => `${a.name} ${a.minutes}m`).join(', ') ?? '';
-    return `${l.date}: screen ${screen} (${topApps}), sleep ${sleep} (deep ${deep}m, REM ${rem}m)`;
+    const hrvStr = l.hrv ? `, HRV ${l.hrv}ms` : '';
+    const rrStr = l.respiratoryRate ? `, RR ${l.respiratoryRate.toFixed(1)} br/min` : '';
+    const wtStr = l.wristTempDeviation != null ? `, wrist temp ${l.wristTempDeviation > 0 ? '+' : ''}${l.wristTempDeviation.toFixed(2)}°C` : '';
+    return `${l.date}: screen ${screen} (${topApps}), sleep ${sleep} (deep ${deep}m, REM ${rem}m)${hrvStr}${rrStr}${wtStr}`;
   }).join('\n');
 
   const messages = [{ role: 'user', content: buildOverallInsightPrompt(rows, withBoth.length) }];
@@ -110,6 +116,8 @@ export async function generateDetailInsight(
     sleepRemMin?: number;
     restingHr?: number;
     hrv?: number;
+    respiratoryRate?: number;
+    wristTempDeviation?: number;
     steps?: number;
   }>
 ): Promise<string> {
@@ -128,6 +136,8 @@ export async function generateDetailInsight(
     }
     if (l.restingHr) parts.push(`HR ${l.restingHr}bpm`);
     if (l.hrv) parts.push(`HRV ${l.hrv}ms`);
+    if (l.respiratoryRate) parts.push(`RR ${l.respiratoryRate.toFixed(1)}br/min`);
+    if (l.wristTempDeviation != null) parts.push(`wrist ${l.wristTempDeviation > 0 ? '+' : ''}${l.wristTempDeviation.toFixed(2)}°C`);
     if (l.steps) parts.push(`steps ${l.steps.toLocaleString()}`);
     return parts.join(' ');
   }).join('\n');

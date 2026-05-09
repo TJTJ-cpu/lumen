@@ -24,6 +24,8 @@ function logToRow(log: Partial<DailyLog> & { date: string }): Record<string, unk
   if (log.screenTimeHourly !== undefined) row.screen_time_hourly = JSON.stringify(log.screenTimeHourly);
   if (log.restingHr !== undefined) row.resting_hr = log.restingHr;
   if (log.hrv !== undefined) row.hrv = log.hrv;
+  if (log.respiratoryRate !== undefined) row.respiratory_rate = log.respiratoryRate;
+  if (log.wristTempDeviation !== undefined) row.wrist_temp_deviation = log.wristTempDeviation;
   if (log.steps !== undefined) row.steps = log.steps;
   if (log.insight !== undefined) row.insight = log.insight;
   if (log.insightGeneratedAt !== undefined) row.insight_generated_at = log.insightGeneratedAt;
@@ -64,6 +66,8 @@ function rowToLog(row: Record<string, unknown>): Partial<DailyLog> & { date: str
   if (row.screen_time_hourly != null) log.screenTimeHourly = JSON.parse(row.screen_time_hourly as string);
   if (row.resting_hr != null) log.restingHr = row.resting_hr as number;
   if (row.hrv != null) log.hrv = row.hrv as number;
+  if (row.respiratory_rate != null) log.respiratoryRate = row.respiratory_rate as number;
+  if (row.wrist_temp_deviation != null) log.wristTempDeviation = row.wrist_temp_deviation as number;
   if (row.steps != null) log.steps = row.steps as number;
   if (row.insight != null) log.insight = row.insight as string;
   if (row.insight_generated_at != null) log.insightGeneratedAt = row.insight_generated_at as string;

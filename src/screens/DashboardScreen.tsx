@@ -1,14 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Button, ScrollView, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { useDailyLog } from '../hooks/useDailyLog';
-import { importHealthData, getCorrelationData } from '../services/storage';
+import { getCorrelationData, get21DayAverages } from '../services/storage';
 import { generateOverallInsight } from '../services/gemini';
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system/legacy';
-import { pullFromSupabase, backfillToSupabase } from '../services/sync';
+import { pullFromSupabase } from '../services/sync';
+import { computeHardCall } from '../utils/hardCall';
 
 const INSIGHT_KEY = 'overall_insight';
 
@@ -28,7 +27,9 @@ export default function DashboardScreen({ navigation }: Props) {
     offset === 1 ? 'Yesterday' :
     dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const { log, loading, refresh } = useDailyLog(date);
+  const [hardCallScore, setHardCallScore] = useState<number | null>(null);
   const [insight, setInsight] = useState<string | null>(null);
+  const [insightDate, setInsightDate] = useState<string | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
 
   const onGenerateInsight = async () => {
@@ -36,8 +37,11 @@ export default function DashboardScreen({ navigation }: Props) {
     try {
       const data = await getCorrelationData();
       const text = await generateOverallInsight(data);
+      const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       await AsyncStorage.setItem(INSIGHT_KEY, text);
+      await AsyncStorage.setItem(INSIGHT_KEY + '_date', now);
       setInsight(text);
+      setInsightDate(now);
     } catch (err) {
       Alert.alert('Failed', err instanceof Error ? err.message : 'Could not generate insight.');
     } finally {
@@ -47,10 +51,22 @@ export default function DashboardScreen({ navigation }: Props) {
 
   const loadInsight = async () => {
     const saved = await AsyncStorage.getItem(INSIGHT_KEY);
+    const savedDate = await AsyncStorage.getItem(INSIGHT_KEY + '_date');
     if (saved) setInsight(saved);
+    if (savedDate) setInsightDate(savedDate);
   };
 
   useState(() => { loadInsight(); });
+
+  useEffect(() => {
+    if (!log) { setHardCallScore(null); return; }
+    get21DayAverages().then(avg => {
+      setHardCallScore(computeHardCall(
+        { hrv: log.hrv, respiratoryRate: log.respiratoryRate, wristTempDeviation: log.wristTempDeviation },
+        avg
+      ));
+    });
+  }, [log]);
 
   const onRestore = async () => {
     const result = await pullFromSupabase();
@@ -58,22 +74,6 @@ export default function DashboardScreen({ navigation }: Props) {
     Alert.alert(
       'Restore done',
       `Restored ${result.restored} rows from Supabase.${result.failed > 0 ? ` Failed ${result.failed}.` : ''}`
-    );
-  };
-
-const onImportHealth = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
-    if (result.canceled) return;
-    const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
-    const healthData = JSON.parse(content);
-    const healthDates = Object.keys(healthData).length;
-    const healthWithSleep = Object.values(healthData).filter((d: any) => d.sleepDurationMin).length;
-    const { imported, skipped } = await importHealthData(healthData);
-    await backfillToSupabase();
-    await refresh();
-    Alert.alert(
-      'Health import',
-      `File has ${healthDates} days (${healthWithSleep} with sleep).\nImported: ${imported}\nSkipped (before first screen time date): ${skipped}`
     );
   };
 
@@ -97,6 +97,8 @@ return (
         <View style={styles.dataBlock}>
           <Text style={styles.body}>Sleep: {log.sleepDurationMin ? formatMins(log.sleepDurationMin) : '—'}</Text>
           <Text style={styles.body}>Screen time: {log.screenTimeTotalMin ? formatMins(log.screenTimeTotalMin) : '—'}</Text>
+          <Text style={styles.body}>Resting HR: {log.restingHr ? `${log.restingHr} bpm` : '—'}</Text>
+          <Text style={styles.body}>Stress Level: {hardCallScore != null ? `${hardCallScore} / 100` : '—'}</Text>
 
           {log.screenTimeApps && log.screenTimeApps.length > 0 && (() => {
             const max = Math.max(...log.screenTimeApps!.map(a => a.minutes));
@@ -136,6 +138,7 @@ return (
       {(insight || insightLoading) && (
         <View style={styles.insightBlock}>
           <Text style={styles.sectionTitle}>Overall Insight</Text>
+          {insightDate && <Text style={styles.insightDate}>Generated {insightDate}</Text>}
           {insightLoading ? (
             <Text style={styles.insightText}>Generating…</Text>
           ) : (
@@ -147,7 +150,6 @@ return (
       <View style={styles.buttons}>
         <Button title="Total Screen Time" onPress={() => navigation.navigate('Totals')} />
         <Button title="Capture Screen Time" onPress={() => navigation.navigate('Capture')} />
-        <Button title="Import Health Data" onPress={onImportHealth} />
         <Button title="Restore from Supabase" onPress={onRestore} />
         <Button title={insight ? "Regenerate Insight" : "Generate Insight"} onPress={onGenerateInsight} />
         <Button title="Detail Insight" onPress={() => navigation.navigate('DetailInsight')} />
@@ -170,6 +172,7 @@ const styles = StyleSheet.create({
   rowSmall: { fontSize: 13, color: '#555' },
   buttons: { gap: 12, width: '100%' },
   insightBlock: { marginTop: 20, padding: 14, backgroundColor: '#f5f5f5', borderRadius: 10, alignSelf: 'stretch' },
+  insightDate: { fontSize: 12, color: '#999', marginBottom: 6 },
   insightText: { fontSize: 14, color: '#333', lineHeight: 20 },
   appRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   appName: { width: 110, fontSize: 13, color: '#333' },
