@@ -11,12 +11,8 @@ Signal guide:
 - RR (br/min): respiratory rate during sleep; normal 12–18, elevated = stress
 - Wrist temp (°C): deviation from personal baseline; positive = elevated (stress/illness signal)
 
-Step 1 — compute a daily stress score (0–100) for each day with at least one physiological signal. Derive a weighted formula from the data distribution you see. State the formula once clearly.
+Write exactly 2 paragraphs. No tables, no bullet points, no headers, no markdown. Write conversationally — like a coach giving a summary, not a data analyst filing a report. Do not list specific dates or day-by-day breakdowns.
 
-Then write 4 paragraphs. No tables, no bullet points, no headers, no markdown.
-
-Paragraph 1: Screen time patterns — which apps dominate, total time, and trends.
-Paragraph 2: Recovery quality — sleep duration, deep and REM averages, HRV trend, RR, and wrist temp deviations. Highlight the best and worst recovery days by date.
-Paragraph 3: Stress scores — list each day's score, identify the highest and lowest, and name the specific screen time behaviour on those days.
-Paragraph 4: Two specific, actionable changes based on the data. Justify each with actual numbers.`;
+Paragraph 1: The strongest overall pattern in the data — which app or habit consistently shows up alongside worse sleep, lower HRV, elevated respiratory rate, or higher wrist temp. Describe the general tendency in plain language (e.g. "You tend to sleep less and recover worse on nights when you spend a lot of time on X").
+Paragraph 2: Two practical changes TJ should make this week. Keep them concrete and grounded in what the data shows, but write them as advice, not statistics.`;
 }

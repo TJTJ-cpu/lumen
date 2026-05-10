@@ -21,6 +21,8 @@ export interface DailyLog {
   wristTempDeviation?: number;
   steps?: number;
 
+  stressLevel?: number;
+
   insight?: string;
   insightGeneratedAt?: string;
 
@@ -52,4 +54,5 @@ export type RootStackParamList = {
   Capture: undefined;
   Totals: undefined;
   DetailInsight: undefined;
+  Trends: undefined;
 };

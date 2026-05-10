@@ -47,7 +47,7 @@ async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
     );
   `);
 
-  for (const col of ['respiratory_rate REAL', 'wrist_temp_deviation REAL']) {
+  for (const col of ['respiratory_rate REAL', 'wrist_temp_deviation REAL', 'stress_level INTEGER']) {
     try { await db.execAsync(`ALTER TABLE daily_log ADD COLUMN ${col}`); } catch (_) {}
   }
 }
@@ -70,6 +70,7 @@ type DailyLogRow = {
   respiratory_rate: number | null;
   wrist_temp_deviation: number | null;
   steps: number | null;
+  stress_level: number | null;
   insight: string | null;
   insight_generated_at: string | null;
   created_at: string;
@@ -100,6 +101,7 @@ function rowToDailyLog(row: DailyLogRow): DailyLog {
     respiratoryRate: row.respiratory_rate ?? undefined,
     wristTempDeviation: row.wrist_temp_deviation ?? undefined,
     steps: row.steps ?? undefined,
+    stressLevel: row.stress_level ?? undefined,
     insight: row.insight ?? undefined,
     insightGeneratedAt: row.insight_generated_at ?? undefined,
     createdAt: row.created_at,
@@ -120,10 +122,10 @@ export async function upsertDailyLog(
       sleep_start, sleep_end, sleep_duration_min,
       sleep_deep_min, sleep_rem_min, sleep_light_min, sleep_score,
       screen_time_total_min, screen_time_apps, screen_time_hourly,
-      resting_hr, hrv, respiratory_rate, wrist_temp_deviation, steps,
+      resting_hr, hrv, respiratory_rate, wrist_temp_deviation, steps, stress_level,
       insight, insight_generated_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     ON CONFLICT(date) DO UPDATE SET
       sleep_start = COALESCE(excluded.sleep_start, sleep_start),
       sleep_end = COALESCE(excluded.sleep_end, sleep_end),
@@ -140,6 +142,7 @@ export async function upsertDailyLog(
       respiratory_rate = COALESCE(excluded.respiratory_rate, respiratory_rate),
       wrist_temp_deviation = COALESCE(excluded.wrist_temp_deviation, wrist_temp_deviation),
       steps = COALESCE(excluded.steps, steps),
+      stress_level = COALESCE(excluded.stress_level, stress_level),
       insight = COALESCE(excluded.insight, insight),
       insight_generated_at = COALESCE(excluded.insight_generated_at, insight_generated_at),
       updated_at = datetime('now')`,
@@ -161,6 +164,7 @@ export async function upsertDailyLog(
       log.respiratoryRate ?? null,
       log.wristTempDeviation ?? null,
       log.steps ?? null,
+      log.stressLevel ?? null,
       log.insight ?? null,
       log.insightGeneratedAt ?? null,
     ]

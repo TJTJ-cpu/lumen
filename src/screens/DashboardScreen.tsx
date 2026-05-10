@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { useDailyLog } from '../hooks/useDailyLog';
-import { getCorrelationData, get21DayAverages } from '../services/storage';
+import { getCorrelationData, get21DayAverages, upsertDailyLog } from '../services/storage';
 import { generateOverallInsight } from '../services/ai';
 import { pullFromSupabase } from '../services/sync';
 import { computeHardCall } from '../utils/hardCall';
@@ -61,10 +61,14 @@ export default function DashboardScreen({ navigation }: Props) {
   useEffect(() => {
     if (!log) { setHardCallScore(null); return; }
     get21DayAverages().then(avg => {
-      setHardCallScore(computeHardCall(
+      const score = computeHardCall(
         { hrv: log.hrv, respiratoryRate: log.respiratoryRate, wristTempDeviation: log.wristTempDeviation },
         avg
-      ));
+      );
+      setHardCallScore(score);
+      if (score != null && log.stressLevel !== score) {
+        upsertDailyLog({ date: log.date, stressLevel: score }).catch(() => {});
+      }
     });
   }, [log]);
 
@@ -148,6 +152,7 @@ return (
       )}
 
       <View style={styles.buttons}>
+        <Button title="Trends" onPress={() => navigation.navigate('Trends')} />
         <Button title="Total Screen Time" onPress={() => navigation.navigate('Totals')} />
         <Button title="Capture Screen Time" onPress={() => navigation.navigate('Capture')} />
         <Button title="Restore from Supabase" onPress={onRestore} />

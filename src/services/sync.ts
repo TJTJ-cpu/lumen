@@ -27,6 +27,7 @@ function logToRow(log: Partial<DailyLog> & { date: string }): Record<string, unk
   if (log.respiratoryRate !== undefined) row.respiratory_rate = log.respiratoryRate;
   if (log.wristTempDeviation !== undefined) row.wrist_temp_deviation = log.wristTempDeviation;
   if (log.steps !== undefined) row.steps = log.steps;
+  if (log.stressLevel !== undefined) row.stress_level = log.stressLevel;
   if (log.insight !== undefined) row.insight = log.insight;
   if (log.insightGeneratedAt !== undefined) row.insight_generated_at = log.insightGeneratedAt;
   return row;
@@ -69,6 +70,7 @@ function rowToLog(row: Record<string, unknown>): Partial<DailyLog> & { date: str
   if (row.respiratory_rate != null) log.respiratoryRate = row.respiratory_rate as number;
   if (row.wrist_temp_deviation != null) log.wristTempDeviation = row.wrist_temp_deviation as number;
   if (row.steps != null) log.steps = row.steps as number;
+  if (row.stress_level != null) log.stressLevel = row.stress_level as number;
   if (row.insight != null) log.insight = row.insight as string;
   if (row.insight_generated_at != null) log.insightGeneratedAt = row.insight_generated_at as string;
   return log;
