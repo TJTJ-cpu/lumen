@@ -5,7 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { useDailyLog } from '../hooks/useDailyLog';
 import { getCorrelationData, get21DayAverages } from '../services/storage';
-import { generateOverallInsight } from '../services/gemini';
+import { generateOverallInsight } from '../services/ai';
 import { pullFromSupabase } from '../services/sync';
 import { computeHardCall } from '../utils/hardCall';
 

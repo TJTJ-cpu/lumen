@@ -12,7 +12,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../types';
-import { parseScreenTime } from '../services/gemini';
+import { parseScreenTime } from '../services/ai';
 import { saveDailyLog } from '../services/sync';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Capture'>;

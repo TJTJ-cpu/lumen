@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { DailyLog } from '../types';
-import { generateInsight } from '../services/gemini';
+import { generateInsight } from '../services/ai';
 import { getRecentDailyLogs } from '../services/storage';
 import { saveDailyLog } from '../services/sync';
 

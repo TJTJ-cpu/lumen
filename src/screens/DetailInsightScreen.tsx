@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, Button, ScrollView, Alert, ActivityIndicator } 
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { getDetailInsightData } from '../services/storage';
-import { generateDetailInsight } from '../services/gemini';
+import { generateDetailInsight } from '../services/ai';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetailInsight'>;
 

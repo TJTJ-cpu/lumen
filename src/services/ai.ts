@@ -6,7 +6,7 @@ import { buildDetailInsightPrompt } from "../prompts/detailInsight";
 
 const ENDPOINT = `${LM_STUDIO_HOST}/v1/chat/completions`;
 
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = 5;
 const BASE_DELAY_MS = 1000;
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
