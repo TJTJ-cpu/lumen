@@ -9,6 +9,7 @@ import CaptureScreen from './src/screens/CaptureScreen';
 import TotalsScreen from './src/screens/TotalsScreen';
 import DetailInsightScreen from './src/screens/DetailInsightScreen';
 import TrendsScreen from './src/screens/TrendsScreen';
+import CoachScreen from './src/screens/CoachScreen';
 import { RootStackParamList } from './src/types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -24,6 +25,7 @@ export default function App() {
           <Stack.Screen name="Totals" component={TotalsScreen} options={{ title: 'Total Screen Time' }} />
           <Stack.Screen name="DetailInsight" component={DetailInsightScreen} options={{ title: 'Detail Insight' }} />
           <Stack.Screen name="Trends" component={TrendsScreen} options={{ title: 'Trends' }} />
+          <Stack.Screen name="Coach" component={CoachScreen} options={{ title: 'Health Coach' }} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />

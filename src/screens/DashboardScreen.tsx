@@ -152,6 +152,7 @@ return (
       )}
 
       <View style={styles.buttons}>
+        <Button title="Health Coach" onPress={() => navigation.navigate('Coach')} />
         <Button title="Trends" onPress={() => navigation.navigate('Trends')} />
         <Button title="Total Screen Time" onPress={() => navigation.navigate('Totals')} />
         <Button title="Capture Screen Time" onPress={() => navigation.navigate('Capture')} />

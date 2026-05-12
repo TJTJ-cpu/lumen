@@ -3,6 +3,8 @@ import type { AppUsage, GeminiScreenTimeResponse } from "../types";
 import { parseScreenTimePrompt } from "../prompts/parseScreenTime";
 import { buildOverallInsightPrompt } from "../prompts/overallInsight";
 import { buildDetailInsightPrompt } from "../prompts/detailInsight";
+import { buildCoachSystemPrompt } from "../prompts/coach";
+import type { DailyLog } from "../types";
 
 const ENDPOINT = `${LM_STUDIO_HOST}/v1/chat/completions`;
 
@@ -144,4 +146,16 @@ export async function generateDetailInsight(
 
   const messages = [{ role: 'user', content: buildDetailInsightPrompt(rows, logs.length) }];
   return (await callLMStudio(messages, 0.7)).trim();
+}
+
+export async function generateCoachReply(
+  history: Array<{ role: 'user' | 'assistant'; content: string }>,
+  logs: DailyLog[],
+  avg21: { hrv: number | null; respiratoryRate: number | null }
+): Promise<string> {
+  const messages = [
+    { role: 'system', content: buildCoachSystemPrompt(logs, avg21) },
+    ...history,
+  ];
+  return (await callLMStudio(messages, 0.8)).trim();
 }

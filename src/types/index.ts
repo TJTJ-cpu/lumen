@@ -55,4 +55,5 @@ export type RootStackParamList = {
   Totals: undefined;
   DetailInsight: undefined;
   Trends: undefined;
+  Coach: undefined;
 };
