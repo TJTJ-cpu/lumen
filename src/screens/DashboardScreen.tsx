@@ -56,7 +56,7 @@ export default function DashboardScreen({ navigation }: Props) {
     if (savedDate) setInsightDate(savedDate);
   };
 
-  useState(() => { loadInsight(); });
+  useEffect(() => { loadInsight(); }, []);
 
   useEffect(() => {
     if (!log) { setHardCallScore(null); return; }
@@ -102,7 +102,9 @@ return (
           <Text style={styles.body}>Sleep: {log.sleepDurationMin ? formatMins(log.sleepDurationMin) : '—'}</Text>
           <Text style={styles.body}>Screen time: {log.screenTimeTotalMin ? formatMins(log.screenTimeTotalMin) : '—'}</Text>
           <Text style={styles.body}>Resting HR: {log.restingHr ? `${log.restingHr} bpm` : '—'}</Text>
-          <Text style={styles.body}>Stress Level: {hardCallScore != null ? `${hardCallScore} / 100` : '—'}</Text>
+          <Text style={[styles.body, hardCallScore != null && { color: hardCallScore <= 30 ? '#2a9d5c' : hardCallScore <= 60 ? '#e6a817' : '#e63946' }]}>
+            Stress Level: {hardCallScore != null ? `${hardCallScore} / 100` : '—'}
+          </Text>
 
           {log.screenTimeApps && log.screenTimeApps.length > 0 && (() => {
             const max = Math.max(...log.screenTimeApps!.map(a => a.minutes));
