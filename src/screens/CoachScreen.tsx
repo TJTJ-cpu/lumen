@@ -63,7 +63,7 @@ export default function CoachScreen() {
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={90}
+      keyboardVerticalOffset={120}
     >
       <ScrollView
         ref={scrollRef}
@@ -102,6 +102,7 @@ export default function CoachScreen() {
           onSubmitEditing={send}
           blurOnSubmit={false}
           editable={!loading}
+          multiline
         />
         <TouchableOpacity
           style={[styles.sendBtn, (!input.trim() || loading) && styles.sendBtnDisabled]}
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
   textUser: { color: '#fff' },
   inputRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     padding: 12,
     gap: 8,
     borderTopWidth: 1,
@@ -144,6 +145,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 15,
     color: '#111',
+    maxHeight: 120,
   },
   sendBtn: {
     width: 40,

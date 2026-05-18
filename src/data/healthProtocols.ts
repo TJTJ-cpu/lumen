@@ -5,7 +5,7 @@ export const HEALTH_PROTOCOLS = `
 - Get bright outdoor light within 30–60 min of waking. This sets the cortisol peak and anchors the circadian clock. Even on cloudy days, outdoor light is 10–50x brighter than indoor light.
 - Avoid bright overhead light between 10pm–4am. Dim lights in the evening — this is the single most important thing for melatonin onset.
 - Keep a consistent wake time every day, even weekends. Consistency of wake time matters more than bedtime.
-- Optimal sleep temperature: 65–68°F / 18–20°C. Body temperature must drop ~1–3°F to initiate and maintain sleep.
+- Optimal sleep temperature: 18–20°C. Body temperature must drop ~0.5–1.5°C to initiate and maintain sleep.
 - Alcohol disrupts sleep architecture even if it helps you fall asleep — it fragments sleep and suppresses REM.
 
 **Caffeine**
@@ -38,7 +38,7 @@ export const HEALTH_PROTOCOLS = `
 **Sleep as Priority #1**
 - Johnson treats sleep as the single highest-leverage variable for longevity and performance. He goes to bed at the same time every night (targeting 10pm) and protects it above all else.
 - He tracks sleep score nightly and reviews it every morning before any other decision.
-- Bedroom is kept completely dark and cool (~18°C / 65°F). Eye mask and earplugs if needed.
+- Bedroom is kept completely dark and cool (~18°C). Eye mask and earplugs if needed.
 
 **Evening Protocol**
 - Last meal 3+ hours before bed. Digestion raises core temperature and keeps the body out of deep recovery mode.
